@@ -145,3 +145,14 @@ O UptimeRobot vai bater na URL a cada 5 minutos, impedindo que o Render coloque 
 - O servidor detecta automaticamente o nome da propriedade título do database, independente do idioma ou nome configurado no Notion
 - Nenhuma credencial é exposta no frontend
 - O microfone requer permissão do navegador para funcionar — libere o acesso quando solicitado
+
+## Próximos passos
+ 
+Ideias para evoluir o projeto:
+ 
+- **Data e hora automáticas** — adicionar uma propriedade de data no database para registrar quando cada item foi criado
+- **Múltiplos databases** — permitir escolher para qual database enviar direto pela interface, sem precisar alterar variáveis de ambiente
+- **Atalho de teclado** — iniciar e parar a gravação com uma tecla de atalho, sem precisar clicar no botão
+- **Editar antes de enviar** — permitir corrigir o texto transcrito antes de confirmar o envio ao Notion
+- **Histórico persistente** — salvar os itens enviados em `localStorage` para manter o histórico entre sessões
+- **Extensão do Chrome** — transformar o app em uma extensão para acessar de qualquer aba sem precisar do servidor local
