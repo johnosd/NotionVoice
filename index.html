@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voz → Notion</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap');
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --border: #1e1e2e;
+    --accent: #7c6aff; --accent-glow: rgba(124,106,255,0.18);
+    --green: #3dffa0; --red: #ff4f6a; --text: #e8e6f0; --muted: #6b6882;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .app { width: 100%; max-width: 520px; }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+  h1 span { color: var(--accent); }
+  .sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 28px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card-lbl { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .mic-area { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 12px 0 20px; }
+  .mic-btn { width: 80px; height: 80px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg); cursor: pointer; font-size: 30px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .mic-btn:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+  .mic-btn.rec { background: rgba(255,79,106,0.1); border-color: var(--red); animation: pulse 1.2s ease infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .rec-ind { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--red); display: none; align-items: center; gap: 6px; }
+  .rec-ind.show { display: flex; }
+  .rec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: blink 1s ease infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .transcript { width: 100%; min-height: 64px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .transcript.ph { color: var(--muted); font-style: italic; }
+  .send-btn { width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+  .send-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+  .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .status { font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 14px; border-radius: 8px; display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .status.ok { background: rgba(61,255,160,0.07); color: var(--green); border: 1px solid rgba(61,255,160,0.2); }
+  .status.err { background: rgba(255,79,106,0.07); color: var(--red); border: 1px solid rgba(255,79,106,0.2); }
+  .status.load { background: rgba(124,106,255,0.07); color: var(--accent); border: 1px solid rgba(124,106,255,0.2); }
+  .sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .sdot.ok { background: var(--green); } .sdot.err { background: var(--red); }
+  .sdot.load { background: var(--accent); animation: blink 1s ease infinite; }
+  .log-lbl { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; margin-top: 16px; }
+  .log-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .log-text { color: var(--text); line-height: 1.5; }
+  .log-time { color: var(--muted); font-size: 10px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>voz <span>→</span> notion</h1>
+  <p class="sub">transcrição de voz para database</p>
+
+  <div class="card">
+    <div class="card-lbl">Gravação</div>
+    <div class="mic-area">
+      <button class="mic-btn" id="micBtn" onclick="toggleRec()">🎙</button>
+      <div class="rec-ind" id="recInd"><span class="rec-dot"></span>gravando...</div>
+      <div class="transcript ph" id="box">Clique no microfone e fale...</div>
+    </div>
+    <button class="send-btn" id="sendBtn" disabled onclick="sendToNotion()">Adicionar ao Notion →</button>
+  </div>
+
+  <div id="statusBox"></div>
+  <div id="logSection" style="display:none">
+    <p class="log-lbl">Enviados nesta sessão</p>
+    <div id="logList"></div>
+  </div>
+</div>
+
+<script>
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, isRec = false, final = "", interim = "";
+
+  function updateBox() {
+    const box = document.getElementById("box");
+    const txt = (final + (interim ? " " + interim : "")).trim();
+    box.textContent = txt || "Clique no microfone e fale...";
+    box.className = "transcript" + (txt ? "" : " ph");
+    document.getElementById("sendBtn").disabled = !final.trim();
+  }
+
+  function toggleRec() { isRec ? stopRec() : startRec(); }
+
+  function startRec() {
+    rec = new SR();
+    rec.continuous = true; rec.interimResults = true; rec.lang = "pt-BR";
+    final = ""; interim = "";
+    rec.onresult = e => {
+      let f = "", i = "";
+      for (let r of e.results) r.isFinal ? f += r[0].transcript + " " : i += r[0].transcript;
+      final = f.trim(); interim = i; updateBox();
+    };
+    rec.onend = () => { isRec = false; interim = ""; setRecUI(false); updateBox(); };
+    rec.onerror = e => { showStatus("err", "Erro: " + e.error); isRec = false; setRecUI(false); };
+    rec.start(); isRec = true; setRecUI(true);
+    document.getElementById("statusBox").innerHTML = "";
+  }
+
+  function stopRec() { rec && rec.stop(); isRec = false; setRecUI(false); }
+
+  function setRecUI(on) {
+    const btn = document.getElementById("micBtn");
+    btn.className = "mic-btn" + (on ? " rec" : "");
+    btn.textContent = on ? "⏹" : "🎙";
+    document.getElementById("recInd").className = "rec-ind" + (on ? " show" : "");
+  }
+
+  function showStatus(type, msg) {
+    document.getElementById("statusBox").innerHTML =
+      `<div class="status ${type}"><span class="sdot ${type}"></span>${msg}</div>`;
+  }
+
+  async function sendToNotion() {
+    const text = final.trim();
+    if (!text) return;
+    showStatus("load", "Enviando para o Notion...");
+    try {
+      const res = await fetch("/notion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      if (res.ok) {
+        const time = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        addLog(text, time);
+        final = ""; updateBox();
+        showStatus("ok", "Adicionado ao Notion com sucesso!");
+      } else {
+        const err = await res.json();
+        showStatus("err", err.message || err.error || "Erro ao enviar.");
+      }
+    } catch {
+      showStatus("err", "Não conseguiu conectar ao servidor.");
+    }
+  }
+
+  function addLog(text, time) {
+    const sec = document.getElementById("logSection");
+    sec.style.display = "block";
+    const list = document.getElementById("logList");
+    const item = document.createElement("div");
+    item.className = "log-item";
+    item.innerHTML = `<span class="log-text">${text}</span><span class="log-time">${time}</span>`;
+    list.insertBefore(item, list.firstChild);
+    if (list.children.length > 10) list.removeChild(list.lastChild);
+  }
+</script>
+</body>
+</html>
